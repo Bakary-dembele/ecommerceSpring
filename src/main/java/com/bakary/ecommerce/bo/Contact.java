@@ -33,6 +33,7 @@ public class Contact {
         this.email = email;
         this.phone = phone;
         this.user = user;
+
     }
 
     public Contact() {
