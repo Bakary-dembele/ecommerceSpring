@@ -5,11 +5,13 @@ import com.bakary.ecommerce.bo.User;
 import java.util.List;
 
 public interface UserService {
-    public Integer saveUser(User user);
+    public abstract User saveUser(User user);
 
-    public List<User> getAllUsers();
+    public abstract List<User> getAllUsers();
 
-    public User getUserById(Integer user);
+    public abstract User getUserById(Integer id);
 
-    public void deleteUser(Integer user);
+    public abstract Integer deleteUser(Integer id);
+
+    public abstract boolean isUserExist(Integer id);
 }

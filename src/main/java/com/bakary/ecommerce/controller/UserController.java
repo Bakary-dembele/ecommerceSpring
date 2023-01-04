@@ -1,6 +1,8 @@
 package com.bakary.ecommerce.controller;
 
 import com.bakary.ecommerce.bo.User;
+import com.bakary.ecommerce.exception.UserNotfoundException;
+import com.bakary.ecommerce.repository.UsersRepository;
 import com.bakary.ecommerce.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
@@ -16,18 +18,19 @@ import java.util.List;
 public class UserController {
     LocalDate curDate = LocalDate.now();
     @Autowired
-    private UserService service;
+    private UserService userService;
+    @Autowired
+    private UsersRepository usersRepository;
 
-    @RequestMapping("/users/saveUser")
+    @RequestMapping(value = "/users/saveUser", method = RequestMethod.POST)
     public ResponseEntity<String> saveUser(@RequestBody User user) {
-        Integer id = service.saveUser((user));
-        return  new ResponseEntity<String>("User avec " + id + " a bien crée", HttpStatus.OK);
+         user = userService.saveUser(user);
+        return  new ResponseEntity<String>("User  " + user.getName() + " " + user.getLastname()+ " a bien crée", HttpStatus.OK);
     }
 
     @GetMapping("/users")
     public ResponseEntity<List<User>> getAllUserDetails() {
-        List<User> allUsers = service.getAllUsers();
-        System.out.println("====allUsers===="+ allUsers);
+        List<User> allUsers = userService.getAllUsers();
 
         //sort users
         Sort.TypedSort<User> user = Sort.sort(User.class);
@@ -40,31 +43,52 @@ public class UserController {
 
     @GetMapping("/users/getUserById/{user}")
     public ResponseEntity<User> getUserById(@PathVariable("user") Integer user) {
-        User u = service.getUserById(user);
-        int birthYear = curDate.getYear() - u.getAge();
 
-         System.out.println("====birthYear===="+ birthYear);
+        boolean isUserExist = userService.isUserExist(user);
 
-        return  new ResponseEntity<User>(u, HttpStatus.OK);
+        if (isUserExist) {
+            User u = userService.getUserById(user);
+            int birthYear = curDate.getYear() - u.getAge();
+            System.out.println("====birthYear====" + birthYear);
+
+            return new ResponseEntity<User>(u, HttpStatus.OK);
+        } else {
+
+            throw new UserNotfoundException();
+        }
+
     }
 
     @PutMapping("/users/updateUser/{user}")
     public ResponseEntity<String> updateUser(@PathVariable("user") Integer user, @RequestBody User u) {
-      User userFromDb =  service.getUserById(user);
-      userFromDb.setName(u.getName());
-      userFromDb.setLastname(u.getLastname());
-      userFromDb.setAge(u.getAge());
 
-      Integer id = service.saveUser((userFromDb));
+        boolean isUserExist = userService.isUserExist(user);
 
-      return  new ResponseEntity<String>("User avec " + id + " a bien été modifié", HttpStatus.OK);
+        if (isUserExist) {
+            User userFromDb =  userService.getUserById(user);
+            userFromDb.setName(u.getName());
+            userFromDb.setLastname(u.getLastname());
+            userFromDb.setAge(u.getAge());
+
+            User us = userService.saveUser((userFromDb));
+            return  new ResponseEntity<String>("User " + us.getName() + " " + us.getLastname() +" a bien été modifié", HttpStatus.OK);
+
+        } else {
+            throw  new UserNotfoundException();
+        }
+
     }
 
     @DeleteMapping("/users/deleteUser/{user}")
         public ResponseEntity<String> deleteUser(@PathVariable ("user") Integer user){
-          service.deleteUser(user);
-          return  new ResponseEntity<String>("User avec" + user + " a bien été modifié", HttpStatus.OK);
+
+        boolean isUserExist = userService.isUserExist(user);
+
+        if(isUserExist) {
+            userService.deleteUser(user);
+            return  new ResponseEntity<String>("User a bien été supprimé", HttpStatus.OK);
+        }else {
+            throw  new UserNotfoundException();
+        }
     }
-
-
 }
